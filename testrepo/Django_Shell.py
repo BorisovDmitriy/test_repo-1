@@ -1,6 +1,8 @@
 # python manage.py shell
 
 from women.models import Women
+from women.models import *
+
 
 
 def todo():
@@ -11,3 +13,6 @@ Women(title='Анджелина Джоли', content='Биография Анд�
 w1=_
 w1.save()
 w2 = Women(title='Dima', content='Биография Димы')
+
+
+Category.objects.create(name='Актрисы')
