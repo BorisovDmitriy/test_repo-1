@@ -1,5 +1,5 @@
 {% load static %}
-{% load women_tags%}
+<!--{% load women_tags%} видео  15 убрал-->
 <!DOCTYPE html>
 <html>
 <head>
@@ -16,14 +16,15 @@
 		<div class="header">
 			<ul id="mainmenu" class="mainmenu">
 			<li class="logo"><a href="{% url 'home' %}"><div class="logo"></div></a></li>
-				{% list_menu %} <!--Добавил новый включающиеся тег поэтому цыкл можно убрать -->
-<!--{% for m in menu %}-->
-<!--	{% if not forloop.last %}-->
-<!--			<li><a href="{% url m.url_name %}">{{m.title}}</a></li>-->
-<!--	{% else %}-->
-<!--			<li class="last"><a href="{% url m.url_name %}">{{m.title}}</a></li>-->
-<!--	{% endif %}-->
-<!--{% endfor %}-->
+				<!--{% list_menu %} Добавил новый включающиеся тег поэтому цыкл можно убрать -->
+<!--вернул цыкл из за видео 15-->
+{% for m in menu %}
+	{% if not forloop.last %}
+			<li><a href="{% url m.url_name %}">{{m.title}}</a></li>
+	{% else %}
+			<li class="last"><a href="{% url m.url_name %}">{{m.title}}</a></li>
+	{% endif %}
+{% endfor %}
 			</ul>
 			<div class="clear"></div>
 		</div>
@@ -34,8 +35,7 @@
 <tr>
 <!-- Sidebar слева -->
 	<td valign="top" class="left-chapters">
-<!--		{% getcat as categories%} добавили включающий тег видео 11-->
-
+<!--		{% getcat as categories %} добавили включающий тег видео 11-->
 
 	<ul id="leftchapters">
 {% if cat_selected == 0 %} <!--Если cat_selected==0 то Слова Все котегрии будут отображены как текст,
@@ -45,18 +45,26 @@
 		<li><a href="{% url 'home' %}">Все категории</a></li>
 {% endif %}
 
-<!--	{% getcat filter=2 %} добавили включающий тег видео 11-->
-<!--	{% getcat 2 %} добавили включающий тег видео 11-->
-{% show_categories '-name' cat_selected %}
+<!--{% getcat filter=2 %} &lt;!&ndash;добавили включающий тег видео 11&ndash;&gt;-->
+<!--{% getcat 2 %} &lt;!&ndash;добавили включающий тег видео 11&ndash;&gt;-->
+
+
+
+
 <!--		Удалил из-за тега вкючения видео 11-->
-<!--{% for c in categories %} &lt;!&ndash;Видео 11 заменил cats на свой тег все каетгории отображаем как ссылки и через их перебор &ndash;&gt;-->
-<!--	{% if c.pk == cat_selected %} &lt;!&ndash; если pk категории == cat_selected то отображение в виде текста,-->
-<!--	если нет, то в виде сслыки на категорию&ndash;&gt;-->
-<!--		<li class="selected">{{c.name}}</li>-->
-<!--	{% else %}-->
-<!--		<li><a href="{{ c.get_absolute_url }}">{{c.name}}</a></li>-->
-<!--	{% endif %}-->
-<!--{% endfor %}-->
+<!--		Вернул из-за  видео 15-->
+{% for c in cats %} <!--Видео 11 заменил cats на свой тег все каетгории отображаем как ссылки и через их перебор
+Вернул cats убрал categories видео 15 -->
+{% if c.women__count > 0 %} <!-- видео 17-->
+	{% if c.pk == cat_selected %} <!-- если pk категории == cat_selected то отображение в виде текста,
+	если нет, то в виде сслыки на категорию-->
+		<li class="selected">{{c.name}}</li>
+	{% else %}
+		<li><a href="{{ c.get_absolute_url }}">{{c.name}}</a></li>
+	{% endif %}
+{% endif %}
+{% endfor %}
+
 
 <li class="share">
 		<p>Наш канал</p>
