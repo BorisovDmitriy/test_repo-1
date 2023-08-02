@@ -1,6 +1,6 @@
 import datetime
 
-
+# from django.contrib.auth.forms import UserCreationForm # UserCreationForm  написали свою форму
 from django.http import HttpResponse, HttpResponseNotFound, Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
@@ -10,7 +10,7 @@ from .models import *
 from .utils import *
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
-
+from django.core.paginator import Paginator # Видео 18
 # menu = ["О сайте", "Добавить статью", "Обратная связь", "Войти"]
 
 # Видео 17 убрал в utils.py для mixina
@@ -24,6 +24,7 @@ from django.contrib.auth.decorators import login_required
 
 
 class WomenHome(DataMixin, ListView):
+    # paginate_by = 3  # Видео №18 добавление пагинации, убрал в миксин
     model = Women  # указываем модель, объекты которой мы будем выводить
     template_name = 'women/index.html'
     # указываем имя шаблона, где будет лежать HTML, в котором будут все инструкции о том,
@@ -64,8 +65,14 @@ class WomenHome(DataMixin, ListView):
 
 @login_required
 def about(request):  # HttpRequest название любое, ссылка на request обязательна
-    context = {'title': 'О сайте'}
-    return render(request, 'women/about.html', context=context)  # Изменил из-за списка menu
+    contact_list = Women.objects.all()
+    paginator = Paginator(contact_list, 3)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    return render(request,'women/about.html',{'page_obj': page_obj, 'title': 'О сайте'})
+
+
+
 
 # Видео 15 перешли на классы
 # def addpage(request):
@@ -187,3 +194,14 @@ class WomenCategory(DataMixin, ListView):
 #                'cat_selected': cat.pk,
 #                }
 #     return render(request, 'women/index.html', context=context)
+
+class RegisterUser(DataMixin, CreateView):
+    form_class =RegisterUserForm # UserCreationForm  написали свою форму
+    template_name = 'women/register.html'
+    success_url = reverse_lazy('login')
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        c_def = self.get_user_context(title='Регистрация')
+        return dict(list(context.items()) + list(c_def.items()))
+
