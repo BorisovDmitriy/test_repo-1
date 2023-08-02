@@ -5,10 +5,11 @@ menu = [{'title': "О сайте", 'url_name': 'about'},  # видео 11 доб
         # видео 15 вернул для классов
         {'title': "Добавить статью", 'url_name': 'add_page'},
         {'title': "Обратная связь", 'url_name': 'contact'},
-        {'title': "Войти", 'url_name': 'login'}
+        #{'title': "Войти", 'url_name': 'login'}# Видео 19
         ]
 
 class DataMixin:
+    paginate_by = 2
     def get_user_context(self, **kwargs):
         context = kwargs
         cats = Category.objects.annotate(Count('women'))

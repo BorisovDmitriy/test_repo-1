@@ -19,12 +19,9 @@
 				<!--{% list_menu %} Добавил новый включающиеся тег поэтому цыкл можно убрать -->
 <!--вернул цыкл из за видео 15-->
 {% for m in menu %}
-	{% if not forloop.last %}
 			<li><a href="{% url m.url_name %}">{{m.title}}</a></li>
-	{% else %}
-			<li class="last"><a href="{% url m.url_name %}">{{m.title}}</a></li>
-	{% endif %}
 {% endfor %}
+			<li class="last"><a href="{% url 'register' %}">Регистрация</a> | <a href="{% url 'login' %}">Войти</a></li>
 			</ul>
 			<div class="clear"></div>
 		</div>
@@ -78,12 +75,44 @@
 	{% block breadcrumbs %}
 	{% endblock %}
 
+
 <!-- Блок контента -->
 	<div class="content-text">
 {% block content %}
 {% endblock content%}
+
+<!-- Начало блока пагинации-->
+{% if page_obj.has_other_pages %}
+<nav class="list-pages">
+    <ul>
+<!-- Если доступна предыдущая страница, то даём ссылку на неё и самую первую страницу -->
+{% if page_obj.has_previous %}
+<a href="?page=1">"First"</a>
+<a href="?page={{page_obj.previous_page_number}}"><<<</a>
+{% endif %}
+
+		 <!-- Показываем только текущую страницу и ближайшие к ней, чтобы список не тянулся и не захламлял страницу -->
+		{% for p in paginator.page_range %}
+		{% if page_obj.number == p %}
+        <a class="page-num page-num-selected">{{ p }}</a>
+		{% elif p >= page_obj.number|add:-2 and p <= page_obj.number|add:2  %}
+            <a class="page-num" href="?page={{ p }}">{{ p }}</a>
+		{% endif %}
+        {% endfor %}
+
+<!-- Если есть следующая страница, то даём ссылку на неё и на самую последнюю страницу -->
+{% if page_obj.has_next %}
+<a href="?page={{ page_obj.next_page_number }}">>>></a>
+<a href="?page={{ page_obj.paginator.num_pages }}">"Last"</a>
+{% endif %}
+	</ul>
+</nav>
+{% endif %}
 	</div>
+<!-- D7.2 конец блока пагинации-->
+
 <!-- Конец блока контента -->
+
 
 </td></tr></table>
 </td></tr>
