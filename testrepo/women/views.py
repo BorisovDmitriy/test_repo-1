@@ -1,5 +1,8 @@
 import datetime
 
+from django.contrib.auth import logout, login
+from django.contrib.auth.forms import AuthenticationForm # video 20 не надо написал свою форму
+from django.contrib.auth.views import LoginView # video 20
 # from django.contrib.auth.forms import UserCreationForm # UserCreationForm  написали свою форму
 from django.http import HttpResponse, HttpResponseNotFound, Http404
 from django.shortcuts import render, redirect, get_object_or_404
@@ -11,6 +14,8 @@ from .utils import *
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator # Видео 18
+
+
 # menu = ["О сайте", "Добавить статью", "Обратная связь", "Войти"]
 
 # Видео 17 убрал в utils.py для mixina
@@ -113,8 +118,8 @@ def contact(request):
     return HttpResponse("Обратная связь")
 
 
-def login(request):
-    return HttpResponse("Авторизация")
+# def login(request):
+#     return HttpResponse("Авторизация") Видео 20 убрал повилось нормпльное представление
 
 
 def pageNotFound(request, exception):
@@ -195,8 +200,9 @@ class WomenCategory(DataMixin, ListView):
 #                }
 #     return render(request, 'women/index.html', context=context)
 
+
 class RegisterUser(DataMixin, CreateView):
-    form_class =RegisterUserForm # UserCreationForm  написали свою форму
+    form_class = RegisterUserForm # UserCreationForm написали свою форму
     template_name = 'women/register.html'
     success_url = reverse_lazy('login')
 
@@ -204,4 +210,27 @@ class RegisterUser(DataMixin, CreateView):
         context = super().get_context_data(**kwargs)
         c_def = self.get_user_context(title='Регистрация')
         return dict(list(context.items()) + list(c_def.items()))
+
+    def form_valid(self, form):
+        user = form.save()
+        login(self.request, user) #Функция автомвтической авторизации пользователя
+        return redirect('home')
+
+
+class LoginUser(DataMixin, LoginView):
+    form_class = LoginUserForm
+    template_name = 'women/login.html'
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        c_def = self.get_user_context(title='Авторизация')
+        return dict(list(context.items()) + list(c_def.items()))
+
+    # def get_success_url(self):
+    #     return reverse_lazy('home')  # добавил в settings LOGIN_REDIRECT_URL = '/'
+
+
+def logout_user(request):
+    logout(request) #Функция автомвтической выхода пользователя с сайта
+    return redirect('login')
 
