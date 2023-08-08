@@ -1,24 +1,24 @@
 import datetime
 
 from django.contrib.auth import logout, login
-from django.contrib.auth.forms import AuthenticationForm # video 20 не надо написал свою форму
-from django.contrib.auth.views import LoginView # video 20
+from django.contrib.auth.forms import AuthenticationForm  # video 20 не надо написал свою форму
+from django.contrib.auth.views import LoginView  # video 20
 # from django.contrib.auth.forms import UserCreationForm # UserCreationForm  написали свою форму
 from django.http import HttpResponse, HttpResponseNotFound, Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
-from django.views.generic import ListView, DetailView, CreateView
+from django.views.generic import ListView, DetailView, CreateView, FormView
 from .forms import *
 from .models import *
 from .utils import *
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
-from django.core.paginator import Paginator # Видео 18
+from django.core.paginator import Paginator  # Видео 18
 
 
 # menu = ["О сайте", "Добавить статью", "Обратная связь", "Войти"]
 
-# Видео 17 убрал в utils.py для mixina
+# Видео 17 убрал в utils.py для "mixina"
 # menu = [{'title': "О сайте", 'url_name': 'about'},
 # видео 11 добавили свой тег, чтобы выполнить требование DRY ООП
 #         # видео 15 вернул для классов
@@ -45,15 +45,16 @@ class WomenHome(DataMixin, ListView):
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)  # обращаемся к базовому классу для получения уже сформированных
         # атрибутов например context_object_name = 'posts'. Чтобы ничего не потерять
-        #Video17 context['menu'] = menu
-        #Video17 context['title'] = 'Главная страница'
-        #Video17 context['cat_selected'] = 0
-        #Video17 context['cats'] = Category.objects.all()
-        c_def = self.get_user_context(title='Главная страница') # видео 17
-        return dict(list(context.items()) + list(c_def.items())) # видео 17 забираем context из базового класса и из миксина
+        # Video17 context['menu'] = menu
+        # Video17 context['title'] = 'Главная страница'
+        # Video17 context['cat_selected'] = 0
+        # Video17 context['cats'] = Category.objects.all()
+        c_def = self.get_user_context(title='Главная страница')  # видео 17
+        return dict(
+            list(context.items()) + list(c_def.items()))  # видео 17 забираем context из базового класса и миксина
 
     def get_queryset(self):
-        return Women.objects.filter(is_published=True)
+        return Women.objects.filter(is_published=True).select_related('cat')
 
 
 # видео 15 перешли на классы
@@ -74,9 +75,7 @@ def about(request):  # HttpRequest название любое, ссылка н�
     paginator = Paginator(contact_list, 3)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    return render(request,'women/about.html',{'page_obj': page_obj, 'title': 'О сайте'})
-
-
+    return render(request, 'women/about.html', {'page_obj': page_obj, 'title': 'О сайте'})
 
 
 # Видео 15 перешли на классы
@@ -99,13 +98,14 @@ class AddPage(LoginRequiredMixin, DataMixin, CreateView):
     form_class = AddPostForm
     template_name = 'women/addpage.html'
     success_url = reverse_lazy('home')
-    login_url = reverse_lazy('home') #сдлаем что бы не вылазила ошибка 404 а было перенаправление на станицу регистрации
+    login_url = reverse_lazy(
+        'home')  # сделаем что бы не вылазила ошибка 404 а было перенаправление на станицу регистрации
     raise_exception = True  # для генерации страницы 403 доступ запрещен
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         c_def = self.get_user_context(title='Добавление статьи')
-        return dict(list(context.items() + list(c_def.items())))
+        return dict(list(context.items()) + list(c_def.items()))
         # Убрал из-зи миксина
         # context['title'] = 'Добавление статьи'
         # context['menu'] = menu
@@ -113,13 +113,28 @@ class AddPage(LoginRequiredMixin, DataMixin, CreateView):
         # return context
 
 
+# def contact(request): Видео 23
+#     return HttpResponse("Обратная связь")
 
-def contact(request):
-    return HttpResponse("Обратная связь")
+# Видео 23
+class ContactFormView(DataMixin,
+                      FormView):  # FormView стандартная форма, для представлений которые не взаимодействуют с БД
+    form_class = ContactFormView
+    template_name = 'women/contact.html'
+    success_url = reverse_lazy('home')
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        c_def = self.get_user_context(title='Обратная связь')
+        return dict(list(context.items()) + list(c_def.items()))
+
+    def form_valid(self, form):  # Этот метод вызывается в том случае если пользователь заполнил верно все поля формы
+        print(form.cleaned_data)
+        return redirect('home')
 
 
 # def login(request):
-#     return HttpResponse("Авторизация") Видео 20 убрал повилось нормпльное представление
+#     return HttpResponse("Авторизация") Видео 20 убрал появилось нормальное представление
 
 
 def pageNotFound(request, exception):
@@ -145,6 +160,7 @@ class ShowPost(DataMixin, DetailView):
     template_name = 'women/post.html'
     context_object_name = 'post'
     slug_url_kwarg = 'post_slug'
+
     # pk_url_kwarg =  'post_pk' к примеру это если не по слагу,  а по id принимает
 
     def get_context_data(self, **kwargs):
@@ -167,12 +183,16 @@ class WomenCategory(DataMixin, ListView):
     # здесь мы выбираем категорию по указанному слагу и публикацией True,
     # cat__slug -мы обращаемся к полю cat, через которою обращаемся к полю slug модели Category и забираем его
     def get_queryset(self):
-        return Women.objects.filter(cat__slug=self.kwargs['cat_slug'], is_published=True)
+        return Women.objects.filter(cat__slug=self.kwargs['cat_slug'], is_published=True).select_related('cat')
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
-        c_def = self.get_user_context(title='Категория- ' + str(context['posts'][0].cat),
-                                      cat_selected=context['posts'][0].cat_id)
+        # Оптимизируем запрос видео 21
+        # c_def = self.get_user_context(title='Категория- ' + str(context['posts'][0].cat),
+        #                               cat_selected=context['posts'][0].cat_id)
+        c = Category.objects.get(slug=self.kwargs['cat_slug'])
+        c_def = self.get_user_context(title='Категория- ' + str(c.name),
+                                      cat_selected=c.pk)
         return dict(list(context.items()) + list(c_def.items()))
         # Видео 17 миксин
         # context['title'] = 'Категория - ' + str(context['posts'][0].cat)  # мы обращаемся к коллекции posts,
@@ -182,6 +202,7 @@ class WomenCategory(DataMixin, ListView):
         # context['cat_selected'] = context['posts'][0].cat.id  # здесь то же самое
         # context['cats'] = Category.objects.all()
         # return context
+
 
 # Видео 15 перешли на классы
 # def show_category(request, cat_slug):
@@ -202,7 +223,7 @@ class WomenCategory(DataMixin, ListView):
 
 
 class RegisterUser(DataMixin, CreateView):
-    form_class = RegisterUserForm # UserCreationForm написали свою форму
+    form_class = RegisterUserForm  # UserCreationForm написали свою форму
     template_name = 'women/register.html'
     success_url = reverse_lazy('login')
 
@@ -213,7 +234,7 @@ class RegisterUser(DataMixin, CreateView):
 
     def form_valid(self, form):
         user = form.save()
-        login(self.request, user) #Функция автомвтической авторизации пользователя
+        login(self.request, user)  # Функция автоматической авторизации пользователя
         return redirect('home')
 
 
@@ -231,6 +252,5 @@ class LoginUser(DataMixin, LoginView):
 
 
 def logout_user(request):
-    logout(request) #Функция автомвтической выхода пользователя с сайта
+    logout(request)  # Функция автоматической выхода пользователя с сайта
     return redirect('login')
-
