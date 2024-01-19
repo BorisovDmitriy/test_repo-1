@@ -25,7 +25,12 @@ SECRET_KEY = 'django-insecure-$(mi32z(o#x7-)6j3%79ov8e_*-=nbgh7+%x428o9@rk^)r)je
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True #Поменял для отработки картинок
 
+
+
 ALLOWED_HOSTS = ['127.0.0.1']
+
+
+
 
 
 
@@ -40,9 +45,12 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'debug_toolbar',
     'captcha',
-    'women.apps.WomenConfig'
-
-
+    'women.apps.WomenConfig',
+    'rest_framework',
+    'rest_framework.authtoken',
+    'djoser',
+    # 'sslserver',
+    # 'django_extensions'
 ]
 
 MIDDLEWARE = [
@@ -112,7 +120,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'ru'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Samara'
 
 USE_I18N = True
 
@@ -146,3 +154,22 @@ CACHES = {
         'LOCATION': os.path.join(BASE_DIR, 'testrepo_cache'),
     }
 }
+
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'PAGE_SIZE': 2,
+
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ]
+}
+
