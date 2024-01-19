@@ -8,13 +8,26 @@ from django.http import HttpResponse, HttpResponseNotFound, Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, FormView
+from rest_framework.authentication import TokenAuthentication
+
+
 from .forms import *
 from .models import *
+from .permissions import IsAdminOrReadOnly
 from .utils import *
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator  # Видео 18
 
+# DRF video2,3 и.т.д
+from rest_framework import generics, viewsets
+from .serializers import WomenSerializer
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from django.forms import model_to_dict
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAdminUser, IsAuthenticated
+from rest_framework.pagination import PageNumberPagination
 
 # menu = ["О сайте", "Добавить статью", "Обратная связь", "Войти"]
 
@@ -254,3 +267,133 @@ class LoginUser(DataMixin, LoginView):
 def logout_user(request):
     logout(request)  # Функция автоматической выхода пользователя с сайта
     return redirect('login')
+
+
+class WomenAPIListPagination(PageNumberPagination):
+    page_size = 3
+    page_query_param = 'page_size' # Указывается в адресной строке через амберсанд указывается количество страниц
+    max_page_size = 10000 # Максимальное количество статей на странице
+
+
+class WomenAPIList(generics.ListCreateAPIView): # Выводит список статей
+    queryset = Women.objects.all()
+    serializer_class = WomenSerializer
+    # permission_classes = (IsAuthenticatedOrReadOnly,) # Из за глобального ограничения указал в settings.py
+    permission_classes = (IsAuthenticatedOrReadOnly,) # верул из-за видео 11
+    pagination_class = WomenAPIListPagination
+
+
+class WomenAPIUpdate(generics.RetrieveUpdateAPIView):  # Меняет определенную записб
+    queryset = Women.objects.all()
+    serializer_class = WomenSerializer
+    permission_classes = (IsAuthenticated,)
+    # authentication_classes = (TokenAuthentication,) # Доступ в статью только с авторизацией по токену
+
+
+class WomenAPIDestroy(generics.RetrieveDestroyAPIView):  # Удаляет статьи
+    queryset = Women.objects.all()
+    serializer_class = WomenSerializer
+    permission_classes = (IsAdminOrReadOnly,)
+
+
+# TODO Третий блок коментов видео 10
+# class WomenViewSet(viewsets.ModelViewSet):
+#     queryset = Women.objects.all() #Если убираем не забываем про basename в роутере
+#     serializer_class = WomenSerializer
+#
+#     def get_queryset(self):
+#         pk = self.kwargs.get('pk')
+#
+#         if not pk:
+#             return Women.objects.all()[:3]
+#         return Women.objects.filter(pk=pk) # только обязательно quweryset должен возвращать список поэтому ставим filter
+#
+#     @action(methods=['get'], detail=False) # Указываем метод, в данном случае только GET,detail-True будет отображаться только одна категория
+#     def category(self,request):
+#         cats = Category.objects.all()
+#         return Response({'cats': [c.name for c in cats]})
+
+
+
+    # @action(methods=['get'], detail=True)
+    # def category(self,request, pk=None):
+    #     cats = Category.objects.get(pk=pk)
+    #     return Response({'cats': cats.name})
+
+
+
+# # TODO Второй блок коментов из-за ViewSET
+# class WomenAPIList(generics.ListCreateAPIView):
+#     queryset = Women.objects.all()
+#     serializer_class = WomenSerializer
+#
+#
+# class WomenAPIUpdate(generics.UpdateAPIView):
+#     queryset = Women.objects.all() # В данном случае это ленивый запрос, не жадный. Поэтому вернется только изменяемая запись не все
+#     serializer_class = WomenSerializer
+#
+#
+# class WomenAPIDetailView(generics.RetrieveUpdateDestroyAPIView):
+#     queryset = Women.objects.all()
+#     serializer_class = WomenSerializer
+
+# TODO Первый блок коментов. Хуйня не нужная из-за классов,  за нас все написали уже давно
+# class WomenAPIView(APIView):  # Наследуемся от самого главного класса
+#     def get(self, request):
+#         #Убрал после созд сериализатора lst = Women.objects.all().values() # без .values() будет вызван queryset и будет ошибка, нам нужен список
+#         w = Women.objects.all()
+#         return Response({'posts': WomenSerializer(w, many=True).data})  # папаметр many говорит программе,
+#         # что нужно обрабатывать список значений, а не одну запись
+#
+#     def post(self, request):
+#         serializer = WomenSerializer(data=request.data)
+#         serializer.is_valid(raise_exception=True)
+#         serializer.save()
+#         # НЕ нужны из-за добавления метода save()
+#         # post_new = Women.objects.create(
+#         #     title=request.data['title'],
+#         #     content=request.data['content'],
+#         #     cat_id=request.data['cat_id'],
+#         #     slug=request.data['slug'],
+#         #     photo=request.data['photo']
+#         # )
+#
+#         # return Response({'post': model_to_dict(post_new)})
+#
+#         #Причем после вызова метода save  не нужно вызывать новый объект сериализатора, а использовать тот что
+#         # у нас есть и коллекция data будет ссылаться на новый созданый объект, тот который создаст метод create()
+#         # return Response({'post': WomenSerializer(post_new).data}) # many по умолчанию False, потому что обрабатываем один объект
+#         return Response({'post': serializer.data})
+#
+#     def put(self, request, *args, **kwargs):
+#         pk = kwargs.get('pk',None)
+#         if not pk:
+#             return Response({"error": "Method PUT not allowed"})
+#
+#         try:
+#             instance = Women.objects.get(pk=pk)
+#         except:
+#             return Response({"error": "Method PUT not allowed"})
+#
+#         serializer = WomenSerializer(data=request.data, instance=instance)
+#         serializer.is_valid(raise_exception=True)
+#         serializer.save()
+#         return Response({"post": serializer.data})
+#
+#     def delete(self, request, *args, **kwargs):
+#         pk = kwargs.get("pk", None)
+#         if not pk:
+#             return Response({"ERROR": "Delete Method Is Not Allowed"})
+#         # deleting an object from api
+#         try:
+#             instance = Women.objects.get(pk=pk)
+#             instance.delete()
+#         except:
+#             return Response({"ERROR": "Object Not Found !"})
+#         return Response({"post": f"Object {str(pk)} is deleted"})
+
+
+# class WomenAPIView(generics.ListAPIView):
+#     queryset = Women.objects.all()
+#     serializer_class = WomenSerializer
+
